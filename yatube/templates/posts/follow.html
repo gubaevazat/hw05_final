@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load cache %}
+{% block title %}
+  Избранные авторы
+{% endblock title %}
+{% block content %}
+  {% include "posts/includes/switcher.html" %}
+  {% cache 20 index_page page_obj request %}
+    <h1>Лента избранных авторов</h1>
+    {% for post in page_obj %}
+      <article>
+        {% include "posts/includes/post_card.html" %}
+        {% if post.group %}
+          <p>
+            Группа:
+            <a href="{% url 'posts:group_list' post.group.slug %}">
+              {{ post.group.title }}
+            </a>
+          </p>
+        {% endif %}
+      </article>
+    {% if not forloop.last %}<hr/>{% endif %}
+    {% endfor %}
+    {% include "posts/includes/paginator.html" %}
+  {% endcache %}
+{% endblock content %}
