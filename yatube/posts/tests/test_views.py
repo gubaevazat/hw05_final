@@ -236,7 +236,7 @@ class PostViewsTest(TestCase):
         self.assertIn('comments', context)
         self.assertEqual(context['comments'][0].text, form_data['text'])
 
-    def post_text_content_return(self, post, page = ('posts:index',)):
+    def post_text_content_return(self, post, page=('posts:index',)):
         response = self.authorized_client.get(self.reversor(page))
         return post.text, response.content.decode()
 
@@ -253,7 +253,7 @@ class PostViewsTest(TestCase):
         self.assertNotIn(*self.post_text_content_return(post_cache))
 
     def test_user_can_follow_an_author_not_following(self):
-        """Пользователь может подписаться на автора, на которого не подписан."""
+        """Пользователь может подписаться на автора,на которого не подписан."""
         follow = Follow.objects.filter(
             author=PostViewsTest.user,
             user=PostViewsTest.follower_user
