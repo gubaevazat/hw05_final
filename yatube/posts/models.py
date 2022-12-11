@@ -106,3 +106,13 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'user'],
+                name='check_unique_author_user',
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='check_not_equal_author_user',
+            ),
+        ]

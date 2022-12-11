@@ -53,14 +53,17 @@ class PostURLTest(TestCase):
         private_pages_url = (
             '/create/',
             f'/posts/{PostURLTest.post.pk}/edit/',
-            f'/posts/{PostURLTest.post.pk}/comment/'
+            f'/posts/{PostURLTest.post.pk}/comment/',
+            f'/profile/{PostURLTest.user.username}/follow/',
+            f'/profile/{PostURLTest.user.username}/unfollow/',
+            '/follow/',
         )
         for url in private_pages_url:
             with self.subTest(url=url):
                 response = self.guest_client.get(url, follow=True)
                 self.assertRedirects(
                     response,
-                    f'{reverse("users:login")}?next={url}'
+                    '{}?next={}'.format(reverse('users:login'), url)
                 )
 
     def test_unexisting_page_url(self):

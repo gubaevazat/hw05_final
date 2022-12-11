@@ -9,7 +9,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.forms import CommentForm
-from posts.models import Group, Post, User
+from posts.models import Follow, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -20,6 +20,7 @@ class PostViewsTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='one')
+        cls.follower_user = User.objects.create_user(username='two')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug'
@@ -51,6 +52,8 @@ class PostViewsTest(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(PostViewsTest.user)
+        self.follower_client = Client()
+        self.follower_client.force_login(PostViewsTest.follower_user)
         cache.clear()
 
     def reversor(self, page_value):
@@ -233,9 +236,9 @@ class PostViewsTest(TestCase):
         self.assertIn('comments', context)
         self.assertEqual(context['comments'][0].text, form_data['text'])
 
-    def check_post_in_content(self, page, post):
+    def post_text_content_return(self, post, page = ('posts:index',)):
         response = self.authorized_client.get(self.reversor(page))
-        self.assertIn(post.text, response.content.decode())
+        return post.text, response.content.decode()
 
     def test_index_cache(self):
         """Тест кэширования главной страницы."""
@@ -243,6 +246,50 @@ class PostViewsTest(TestCase):
             text='Тест кэша',
             author=PostViewsTest.user
         )
-        self.check_post_in_content(('posts:index',), post_cache)
+        self.assertIn(*self.post_text_content_return(post_cache))
         post_cache.delete()
-        self.check_post_in_content(('posts:index',), post_cache)
+        self.assertIn(*self.post_text_content_return(post_cache))
+        cache.clear()
+        self.assertNotIn(*self.post_text_content_return(post_cache))
+
+    def test_user_can_follow_an_author_not_following(self):
+        """Пользователь может подписаться на автора, на которого не подписан."""
+        follow = Follow.objects.filter(
+            author=PostViewsTest.user,
+            user=PostViewsTest.follower_user
+        )
+        self.assertTrue(not follow.exists())
+        self.follower_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': PostViewsTest.user.username}
+        ))
+        self.assertTrue(follow.exists())
+
+    def test_user_can_unfollow_an_author_following(self):
+        """Пользователь может отписаться от автора, на которого подписан."""
+        Follow.objects.create(
+            author=PostViewsTest.user,
+            user=PostViewsTest.follower_user
+        )
+        self.follower_client.get(reverse(
+            'posts:profile_unfollow',
+            kwargs={'username': PostViewsTest.user.username}
+        ))
+        self.assertTrue(not Follow.objects.filter(
+            author=PostViewsTest.user,
+            user=PostViewsTest.follower_user
+        ).exists())
+
+    def test_post_appears_on_following_page(self):
+        """Пост появляется на странице подписок у подписчика."""
+        self.follower_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': PostViewsTest.user.username}
+        ))
+        response = self.follower_client.get(reverse('posts:follow_index'))
+        self.assertIn(PostViewsTest.post.text, response.content.decode())
+
+    def test_post_appears_on_following_page(self):
+        """Пост не появляется на странице подписок у не-подписчика."""
+        response = self.follower_client.get(reverse('posts:follow_index'))
+        self.assertNotIn(PostViewsTest.post.text, response.content.decode())

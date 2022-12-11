@@ -8,18 +8,8 @@
   {% cache 20 index_page page_obj request %}
     <h1>Последние обновления на сайте</h1>
     {% for post in page_obj %}
-      <article>
-        {% include "posts/includes/post_card.html" %}
-        {% if post.group %}
-          <p>
-            Группа:
-            <a href="{% url 'posts:group_list' post.group.slug %}">
-              {{ post.group.title }}
-            </a>
-          </p>
-        {% endif %}
-      </article>
-    {% if not forloop.last %}<hr/>{% endif %}
+      {% include "posts/includes/post_card.html" with show_author=True show_group=True %}
+      {% if not forloop.last %}<hr/>{% endif %}
     {% endfor %}
     {% include "posts/includes/paginator.html" %}
   {% endcache %}

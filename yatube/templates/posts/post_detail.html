@@ -27,7 +27,7 @@
       <img class="card-img my-2" src="{{ im.url }}">
     {% endthumbnail %}
     <p>{{ post.text|linebreaks }}</p>
-    {% if post.author == user %}
+    {% if post.author == request.user %}
       <a href="{% url 'posts:post_edit' post.pk %}" class="btn btn-primary">редактировать запись</a>
     {% endif %}
     {% include "posts/includes/comments.html" %}
