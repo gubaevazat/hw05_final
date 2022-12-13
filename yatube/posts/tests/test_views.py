@@ -258,7 +258,7 @@ class PostViewsTest(TestCase):
             author=PostViewsTest.user,
             user=PostViewsTest.follower_user
         )
-        self.assertTrue(not follow.exists())
+        self.assertFalse(follow.exists())
         self.follower_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': PostViewsTest.user.username}
